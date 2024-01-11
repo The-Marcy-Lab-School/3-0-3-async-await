@@ -23,8 +23,10 @@ const getUsers = () => {
     .catch((error) => console.error(error.message));
 }
 
+
+
 // TODO: Write the same function, but using async/await
-const getUsersAsyncAwait = () => {
+const getUsersAsyncAwait = async () => {
 
 }
 

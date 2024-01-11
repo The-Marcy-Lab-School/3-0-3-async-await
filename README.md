@@ -60,7 +60,7 @@ console.log('end'); // this code won't even run
 console.log('start');
 
 try {
- throw Error('uh oh!')
+  throw Error('uh oh!')
 }
 catch (error) {
   console.error(error.message)
@@ -198,17 +198,18 @@ const fetchData = async (url, options = {}) => {
 }
 
 const postUser = (user) => {
-  const newUser = { name: "morpheus", job: "leader" };
-
   const options = {
     method: "POST",
-    body: JSON.stringify(newUser),
+    body: JSON.stringify(user),
     headers: {
       "Content-Type": "application/json",
     }
   }
 
   const postResponseData = await fetch('https://reqres.in/api/users', options)
+
+  console.log(postResponseData);
 }
 
+postUser({name: "morpheus", job: "leader" })
 ```

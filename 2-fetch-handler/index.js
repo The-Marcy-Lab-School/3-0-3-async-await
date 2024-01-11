@@ -1,36 +1,39 @@
-const getUsers = () => {
-  const fetchPromise = fetch('https://reqres.in/api/users');
+const fetchData = async (url) => {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`fetch failed!: ${response.status}`)
 
-  fetchPromise
-    .then((response) => response.json())
-    .then((jsonData) => {
-      console.log(jsonData)
-
-      const usersList = document.querySelector("#users-list");
-      usersList.innerHTML = "";
-
-      jsonData.data.forEach((user) => {
-        const li = document.createElement('li');
-        const p = document.createElement('p');
-        const img = document.createElement('img');
-        usersList.append(li);
-        li.append(p, img);
-
-        p.textContent = `${user.first_name} ${user.last_name}`;
-        img.src = user.avatar
-      })
-    })
-    .catch((error) => console.error(error.message));
+    const jsonData = await response.json();
+    return jsonData;
+  }
+  catch (error) {
+    console.error(error.message);
+    return null;
+  }
 }
 
-// TODO: Write the same function, but using async/await
-const getUsersAsyncAwait = () => {
+const getUsersAsyncAwaitWithHelper = async () => {
+  const jsonData = await fetchData('https://reqres.in/ap/users');
+
+  // dom manipulation
+  const usersList = document.querySelector("#users-list");
+  usersList.innerHTML = "";
+
+  jsonData.data.forEach((user) => {
+    const li = document.createElement('li');
+    const p = document.createElement('p');
+    const img = document.createElement('img');
+    usersList.append(li);
+    li.append(p, img);
+
+    p.textContent = `${user.first_name} ${user.last_name}`;
+    img.src = user.avatar
+  });
 
 }
 
 const main = () => {
-  getUsers();
-  getUsersAsyncAwait();
+  getUsersAsyncAwaitWithHelper()
 }
 
 main();

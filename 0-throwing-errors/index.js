@@ -1,13 +1,14 @@
 console.log('start');
 
-// throw Error('uh oh!');
+throw new Error('uh oh!');
 
+console.log('end');
 
-try {
-  throw Error('uh oh!')
-}
-catch (error) {
-  console.error(error.message)
-}
+// try {
+//   const x = undefined;
+//   console.log(x.foo());
+// }
+// catch (error) {
+//   console.error('caught error: ', error.message)
+// }
 
-console.log('end'); // this code won't even run
