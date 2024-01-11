@@ -93,8 +93,9 @@ Using the `async`/`await` syntax with `try` and `catch` has a number of benefits
 * We can write async code in a syncrhonous-like manner
 * We avoid having to write a bunch of callbacks
 * We can avoid common mistakes made when using callbacks
+* `try/catch` is a more general-purpose way of handling errors that can be used for more than just fetching.
 
-<details><summary>For example, what's wrong with this code?</summary>
+<details><summary>For example, what's wrong with this code? Why does it print `undefined`?</summary>
 
 Forgot to return from the first `.then` when chaining to a second `.then`
 
@@ -110,7 +111,7 @@ promise
     response.json();
   })
   .then((data) => {
-    console.log(data);
+    console.log(data); // print undefined
   })
   .catch((error) => {
     console.log(`${error.name}: ${error.message}`);
