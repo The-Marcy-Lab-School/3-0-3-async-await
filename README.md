@@ -165,14 +165,8 @@ getRandomDog();
 
 ## A better fetchData helper
 
-The `fetchData` helper does a good job at DRYing our code but we can add a few extra features to make it more useful.
+The `fetchData` helper does a good job at DRYing our code but we can add a few extra features. The helper below is a bit more useful:
 
-- If the response was unsucessful, we don't need to parse the body. We should instead throw an error.
-- If we want to send a request with a different method type (POST, PATCH, or DELETE), our helper can't do that (it only does GET requests using `fetch`)
-- We won't always get a response in JSON. 
-- We can return our data in a "Tuple" format — an array with 2 values where the first value is _always_ the data (if present) and the second value is _always_ the error (if present). Only one of the two values will ever be present
-
-The helper below addresses these issues.
 * It accepts an `options` argument to be passed in (it should be defined by the caller of the function), allowing other types of requests to be made (POST, PATCH/PUT, DELETE, etc...)
 * It checks `response.ok` before attempting to parse the response
 * It checks the content type of the `response` to determine how to parse (with `response.json()` or `response.text()`)
