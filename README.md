@@ -1,5 +1,13 @@
 # Async / Await
 
+- [Async / Await](#async--await)
+  - [A better way to write fetching code](#a-better-way-to-write-fetching-code)
+  - [But what about catching errors?](#but-what-about-catching-errors)
+  - [The benefits of `async`/`await`](#the-benefits-of-asyncawait)
+  - [Making a generic fetch helper](#making-a-generic-fetch-helper)
+  - [A better fetchData helper](#a-better-fetchdata-helper)
+
+
 ## A better way to write fetching code
 
 So far we have written `fetch` code like this:
