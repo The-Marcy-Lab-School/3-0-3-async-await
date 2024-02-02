@@ -172,6 +172,12 @@ The `fetchData` helper does a good job at DRYing our code but we can add a few e
 - We won't always get a response in JSON. 
 - We can return our data in a "Tuple" format — an array with 2 values where the first value is _always_ the data (if present) and the second value is _always_ the error (if present). Only one of the two values will ever be present
 
+The helper below addresses these issues.
+* It accepts an `options` argument to be passed in (it should be defined by the caller of the function), allowing other types of requests to be made (POST, PATCH/PUT, DELETE, etc...)
+* It checks `response.ok` before attempting to parse the response
+* It checks the content type of the `response` to determine how to parse (with `response.json()` or `response.text()`)
+* It returns the data in a "tuple" format — an array with 2 values where the first value is _always_ the data (if present) and the second value is _always_ the error (if present). Only one of the two values will ever be present.
+
 ```js
 const fetchData = async (url, options = {}) => {
   try {
