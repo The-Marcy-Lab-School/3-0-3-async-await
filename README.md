@@ -178,26 +178,25 @@ const fetchData = async (url, options = {}) => {
     const response = await fetch(url, options);
 
     // Throw an error if the response was not 2xx
-    if (!response.ok) {
-      throw new Error(`Fetch failed. ${response.status} ${response.statusText}`)
-    }
+    if (!response.ok) throw new Error(`Fetch failed. ${response.status} ${response.statusText}`)
 
     // Check the content type to determine how to parse the response
-    const isJson = (response.headers.get('content-type') || '').includes('application/json')
-    let data = isJson ? await response.json() : await response.text()
-
-    // return a tuple: [data, error]
-    return [data, null]; 
+    // Then, return a tuple: [data, error]
+    const contentType = response.headers.get('content-type');
+    if (contentType !== null && contentType.includes('application/json')) {
+        return [await response.json(), null]
+    } else {
+        return [await response.text(), null]
+    }
   }
   catch (error) {
-    // if there was an error, log it and return null
+    // if there was an error, log it and return a tuple: [data, error]
     console.error(error.message);
-
-    // return a tuple: [data, error]
     return [null, error]; 
   }
 }
 
+// Example Using the helper
 const postUser = (user) => {
   const options = {
     method: "POST",
@@ -207,9 +206,9 @@ const postUser = (user) => {
     }
   }
 
-  const postResponseData = await fetch('https://reqres.in/api/users', options)
-
-  console.log(postResponseData);
+  const [postResponseData, error] = await fetchData('https://reqres.in/api/users', options);
+  if (!error) console.error(error.message)
+  else console.log(postResponseData);
 }
 
 postUser({name: "morpheus", job: "leader" })
