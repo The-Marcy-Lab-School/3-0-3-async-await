@@ -98,7 +98,7 @@ getPikachuData();
 ## The benefits of `async`/`await`
 
 Using the `async`/`await` syntax with `try` and `catch` has a number of benefits. The main ones being **readability** and **debuggability**.
-* We can write async code in a syncrhonous-like manner
+* We can write async code in a synchronous-like manner
 * We avoid having to write a bunch of callbacks
 * We can avoid common mistakes made when using callbacks
 * `try/catch` is a more general-purpose way of handling errors that can be used for more than just fetching.
@@ -173,12 +173,12 @@ getRandomDog();
 
 ## A better fetchData helper
 
-The `fetchData` helper does a good job at DRYing our code but we can add a few extra features to make it more useful.
+The `fetchData` helper does a good job at DRYing our code but we can add a few extra features. The helper below is a bit more useful:
 
-- If the response was unsucessful, we don't need to parse the body. We should instead throw an error.
-- If we want to send a request with a different method type (POST, PATCH, or DELETE), our helper can't do that (it only does GET requests using `fetch`)
-- We won't always get a response in JSON. 
-- We can return our data in a "Tuple" format — an array with 2 values where the first value is _always_ the data (if present) and the second value is _always_ the error (if present). Only one of the two values will ever be present
+* It accepts an `options` argument to be passed in (it should be defined by the caller of the function), allowing other types of requests to be made (POST, PATCH/PUT, DELETE, etc...)
+* It checks `response.ok` before attempting to parse the response
+* It checks the content type of the `response` to determine how to parse (with `response.json()` or `response.text()`)
+* It returns the data in a "tuple" format — an array with 2 values where the first value is _always_ the data (if present) and the second value is _always_ the error (if present). Only one of the two values will ever be present.
 
 ```js
 const fetchData = async (url, options = {}) => {
@@ -186,26 +186,25 @@ const fetchData = async (url, options = {}) => {
     const response = await fetch(url, options);
 
     // Throw an error if the response was not 2xx
-    if (!response.ok) {
-      throw new Error(`Fetch failed. ${response.status} ${response.statusText}`)
-    }
+    if (!response.ok) throw new Error(`Fetch failed. ${response.status} ${response.statusText}`)
 
     // Check the content type to determine how to parse the response
-    const isJson = (response.headers.get('content-type') || '').includes('application/json')
-    let data = isJson ? await response.json() : await response.text()
-
-    // return a tuple: [data, error]
-    return [data, null]; 
+    // Then, return a tuple: [data, error]
+    const contentType = response.headers.get('content-type');
+    if (contentType !== null && contentType.includes('application/json')) {
+        return [await response.json(), null]
+    } else {
+        return [await response.text(), null]
+    }
   }
   catch (error) {
-    // if there was an error, log it and return null
+    // if there was an error, log it and return a tuple: [data, error]
     console.error(error.message);
-
-    // return a tuple: [data, error]
     return [null, error]; 
   }
 }
 
+// Example Using the helper
 const postUser = (user) => {
   const options = {
     method: "POST",
@@ -215,9 +214,9 @@ const postUser = (user) => {
     }
   }
 
-  const postResponseData = await fetch('https://reqres.in/api/users', options)
-
-  console.log(postResponseData);
+  const [postResponseData, error] = await fetchData('https://reqres.in/api/users', options);
+  if (!error) console.error(error.message)
+  else console.log(postResponseData);
 }
 
 postUser({name: "morpheus", job: "leader" })
