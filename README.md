@@ -90,7 +90,7 @@ getPikachuData();
 ## The benefits of `async`/`await`
 
 Using the `async`/`await` syntax with `try` and `catch` has a number of benefits. The main ones being **readability** and **debuggability**.
-* We can write async code in a syncrhonous-like manner
+* We can write async code in a synchronous-like manner
 * We avoid having to write a bunch of callbacks
 * We can avoid common mistakes made when using callbacks
 * `try/catch` is a more general-purpose way of handling errors that can be used for more than just fetching.
