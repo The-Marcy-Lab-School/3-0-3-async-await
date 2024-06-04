@@ -1,24 +1,30 @@
 # Async / Await
 
-- [Async / Await](#async--await)
-  - [A better way to write fetching code](#a-better-way-to-write-fetching-code)
-  - [But what about catching errors?](#but-what-about-catching-errors)
-  - [The benefits of `async`/`await`](#the-benefits-of-asyncawait)
-  - [Making a generic fetch helper](#making-a-generic-fetch-helper)
-  - [A better fetchData helper](#a-better-fetchdata-helper)
+- [Fetching "Synchronously" with Async/Await](#fetching-synchronously-with-asyncawait)
+- [Handling Errors with Try/Catch](#handling-errors-with-trycatch)
+- [The benefits of `async`/`await`](#the-benefits-of-asyncawait)
+- [Making a generic fetch helper](#making-a-generic-fetch-helper)
 
-
-## A better way to write fetching code
+## Fetching "Synchronously" with Async/Await
 
 So far we have written `fetch` code like this:
 
 ```js
-const fetchPromise = fetch('https://pokeapi.co/api/v2/pokemon/pikachu');
-
-fetchPromise
-  .then((response) => response.json())
-  .then((jsonData) => console.log(jsonData))
-  .catch((error) => console.error(error.message));
+fetch('https://pokeapi.co/api/v2/pokemon/pikachu')
+  .then((response) => {
+    if (!response.ok) {
+      return console.log(`Fetch failed. ${response.status} ${response.statusText}`)
+    }
+    return response.json()
+  })
+  .then((responseData) => {
+      console.log("Here is your data:", responseData);
+      // do something with the response data
+  })
+  .catch((error) => {
+    console.log("Error caught!");
+    console.error(error.message);
+  })
 ```
 
 We have taken the `Promise` returned by `fetch()` and used the `.then` and `.catch` methods to schedule callbacks to execute when the promise resolves/rejects.
@@ -26,17 +32,22 @@ We have taken the `Promise` returned by `fetch()` and used the `.then` and `.cat
 However, an alternate syntax was created to achieve the same effect but in a more "synchronous-like" manner. This approach utilizes the `async` and `await` keywords
 
 ```jsx
-// A function marked with async is "non-blocking" and returns a Promise
+// A function marked with `async` is "non-blocking" and returns a Promise
+// You MUST put `await` statements inside of a function marked with `async`
 const getPikachuData = async () => { 
   // When we await a Promise, we are given the resolved value (the Response object)
   // An awaited statement becomes "blocking"
   const response = await fetch('https://pokeapi.co/api/v2/pokemon/pikachu');
+  
+  if (!response.ok) {
+    return console.log(`Fetch failed. ${response.status} ${response.statusText}`)
+  }
 
   // Since response.json() also returns a Promise, we can await it too.
   const jsonData = await response.json();
 
   // now we do something with the data
-  console.log(jsonData);
+  console.log("Here is your data:", responseData);
 };
 
 getPikachuData(); // non-blocking and returns a Promise (we can .then it if we wanted to)
@@ -48,7 +59,7 @@ console.log('when does this happen?')
     - First, it labels a function as asynchronous. This is required for any function that makes use of the `await` keyword
     - Second, it wraps the function’s returned value in a Promise. If we were to store the returned value of `getPikachuData()`, it would be a Promise.
 
-## But what about catching errors?
+## Handling Errors with Try/Catch
 
 There are some functions (like `fetch()`) that are capable of throwing an error. 
 
@@ -77,15 +88,22 @@ catch (error) {
 console.log('end'); // now, this code can run!
 ```
 
-So, when using a function that can throw an error like `fetch()`, we should always use `try` and `catch`:
+So, when using a function that can throw an error like `fetch()` or `response.json()`, we should always use `try` and `catch`:
 
 ```js
 const getPikachuData = async () => { 
   try {
     const response = await fetch('https://pokeapi.co/api/v2/pokemon/pikachu');
+    
+    if (!response.ok) {
+      return console.log(`Fetch failed. ${response.status} ${response.statusText}`)
+    }
+
+    // Since response.json() also returns a Promise, we can await it too.
     const jsonData = await response.json();
-    // do something with the data
-    console.log(jsonData);
+
+    // now we do something with the data
+    console.log("Here is your data:", responseData);
   }
   catch (error) {
     console.error(`${error.name}: ${error.message}`);
@@ -133,82 +151,48 @@ The code for fetching data is almost always the same:
 - In a `try` block, `fetch` from a URL and parse the response as JSON
 - In a `catch` block, log the caught `error`. Any error that occurs in the `try` block will be caught by this one shared `catch` block
 
-So, we can refactor our code a bit and create a helper function that abstracts away this logic:
-
-```js
-// This function returns a Promise that resolves to jsonData
-const fetchData = async (url) => {
-  try {
-    const response = await fetch(url);
-    const jsonData = await response.json();
-    // we want this function to resolve to jsonData, so we return it!
-    return jsonData; 
-  }
-  catch (error) {
-    // if there was an error, log it and return null
-    console.error(error.message);
-    return null; 
-  }
-}
-
-const getPikachuData = async () => {    
-  // fetchData returns a Promise so we can await it! 
-  // Just make sure to make the function async
-  const pikachuData = await fetchData('https://pokeapi.co/api/v2/pokemon/pikachu');
-  
-  // do something with pikachuData (or just print it)
-  console.log(pikachuData)
-};
-
-const getRandomDog = async () => {    
-  const dogData = await fetchData('https://dog.ceo/api/breeds/image/random');
-  
-  // do something with dogData
-  console.log(dogData);
-};
-
-getPikachuData();
-getRandomDog();
-```
-
-## A better fetchData helper
-
-The `fetchData` helper does a good job at DRYing our code but we can add a few extra features. The helper below is a bit more useful:
-
-* It accepts an `options` argument to be passed in (it should be defined by the caller of the function), allowing other types of requests to be made (POST, PATCH/PUT, DELETE, etc...)
-* It checks `response.ok` before attempting to parse the response
-* It checks the content type of the `response` to determine how to parse (with `response.json()` or `response.text()`)
-* It returns the data in a "tuple" format — an array with 2 values where the first value is _always_ the data (if present) and the second value is _always_ the error (if present). Only one of the two values will ever be present.
+So, we can refactor our code a bit, add in some safety measures, and create a helper function that abstracts away this logic:
 
 ```js
 const fetchData = async (url, options = {}) => {
   try {
     const response = await fetch(url, options);
 
-    // Throw an error if the response was not 2xx
+    // Throw an error if the response was not 2xx - let the catch statement handle it
     if (!response.ok) throw new Error(`Fetch failed. ${response.status} ${response.statusText}`)
 
-    // We can either parse the response as json or as plain text.
-    // Check the content type to determine how to parse the response.
-    // Then, return a tuple: [data, error]
+    // Make sure that the content type of the response is JSON before parsing it
+    // and return a tuple with the data and a null error.
     const contentType = response.headers.get('content-type');
     if (contentType !== null && contentType.includes('application/json')) {
-        const jsonData = await response.json();
-        return [jsonData, null]
-    } else {
-        const textData = await response.text();
-        return [textData, null]
+      const jsonData = await response.json();
+      return [jsonData, null]
     }
+
+    // If the contentType of the response is not JSON, parse it as plain
+    // text and return a tuple with a null error
+    const textData = await response.text();
+    return [textData, null]
   }
   catch (error) {
     // if there was an error, log it and return a tuple: [data, error]
     console.error(error.message);
-    return [null, error]; 
+    return [null, error];
   }
 }
+```
 
-// Example Using the helper
-const postUser = (user) => {
+Let's break down this `fetchData` helper
+* It accepts a `url` and an `options` argument allowing other types of requests to be made (POST, PATCH/PUT, DELETE, etc...). If the caller of `fetchData` does not provide `options`, it will default to an empty object.
+* If the `!response.ok` guard clause is triggered, an error is thrown instead of returning. This let's us handle `4xx` and `5xx` responses in the `catch` block and treat them the same as errors thrown by `fetch` and `response.json()`.
+* It checks the content type of the `response` to determine how to parse (with `response.json()` or `response.text()`)
+* It returns the data in a "tuple" format — an array with 2 values where the first value is _always_ the data (if present) and the second value is _always_ the error (if present). Only one of the two values will ever be present.
+
+With the helper built, we can use it like this
+
+```js
+// Example Using the helper - remember to make it async!
+const postUser = async (user) => {
   const options = {
     method: "POST",
     body: JSON.stringify(user),
@@ -217,10 +201,20 @@ const postUser = (user) => {
     }
   }
 
-  const [postResponseData, error] = await fetchData('https://reqres.in/api/users', options);
-  if (!error) console.error(error.message)
-  else console.log(postResponseData);
+  // Here, we use the `fetchData` helper.
+  // Since it is an `async` function, it returns a Promise that we can `await`
+  const [newUserData, error] = await fetchData('https://reqres.in/api/users', options);
+  
+  // Remember, `fetchData` will return a tuple where the first value is ALWAYS the
+  // fetched data (if the fetch was successful) and the second value is ALWAYS the
+  // error (if the fetch was unsuccessful). We can then deal with th
+  if (error) {
+    document.querySelector("#error-text").innerText = "sorry an error occurred, please try again later"
+  };
+  else {
+    renderNewUser(newUserData) 
+  }
 }
 
-postUser({name: "morpheus", job: "leader" })
+postUser({ name: "morpheus", job: "leader" })
 ```
