@@ -103,10 +103,11 @@ const getPikachuData = async () => {
     const jsonData = await response.json();
 
     // now we do something with the data
-    console.log("Here is your data:", responseData);
+    console.log("Here is your data:", jsonData);
   }
   catch (error) {
-    console.error(`${error.name}: ${error.message}`);
+    console.log("Error caught!");
+    console.error(error.message);
   }
 };
 
@@ -140,7 +141,8 @@ promise
     console.log(data); // print undefined
   })
   .catch((error) => {
-    console.log(`${error.name}: ${error.message}`);
+    console.log("Error caught!");
+    console.log(error.message);
   })
 ```
 
@@ -217,4 +219,77 @@ const postUser = async (user) => {
 }
 
 postUser({ name: "morpheus", job: "leader" })
+```
+
+### Why return a tuple?
+
+You may be wondering, why couldn't we write this helper function such that it just returns the data if there are no errors, or returns the error if there is one?
+
+```js
+const fetchData = async (url, options = {}) => {
+  try {
+    const response = await fetch(url, options);
+
+    // Throw an error if the response was not 2xx - let the catch statement handle it
+    if (!response.ok) throw new Error(`Fetch failed. ${response.status} ${response.statusText}`)
+
+    // Make sure that the content type of the response is JSON before parsing it
+    // and return a tuple with the data and a null error.
+    const contentType = response.headers.get('content-type');
+    if (contentType !== null && contentType.includes('application/json')) {
+      const jsonData = await response.json();
+      return jsonData
+    }
+
+    // If the contentType of the response is not JSON, parse it as plain
+    // text and return a tuple with a null error
+    const textData = await response.text();
+    return textData;
+  }
+  catch (error) {
+    console.error(error.message);
+    return error;
+  }
+}
+```
+
+The reason we don't do this is to make the code that uses this function cleaner. The code that uses `fetchData` will need to know if the data it receives is an error or JSON data. The problem is that `error` objects and the `jsonData` can often be difficult to differentiate. An `error` object will have a `message` property, and often times, so do JSON response objects! Take the [Dog Image API](https://dog.ceo/dog-api/) as an example. It will return its data like this:
+
+```json
+{
+    "message": "https://images.dog.ceo/breeds/mix/dog3.jpg",
+    "status": "success"
+}
+```
+
+Since `error` objects and `jsonData` objects can look so similar in their structure, we can't simply check the structure of the returned object to know if it was an error or JSON data. We _could_ do something like this:
+
+```js
+const getDogImage = async () => {
+  const dogImage = await fetchData('https://dog.ceo/api/breeds/image/random')
+  console.log(dogImage.message); // I can't know if this is going to be an error message or a dog picture.
+
+  // I could check the type of the object
+  if (dogImage instanceof Error) {
+    // handle the error
+  }
+  else {
+    // use the dog image
+  }
+}
+```
+
+But if our `fetchData` function always returns a `[data, error]` tuple where one of those values will ALWAYS be `null` while the other is defined, then the code that uses `fetchData` will become much cleaner:
+
+```js
+const getDogImage = async () => {
+  const [dogImage, error] = await fetchData('htps://dog.ceo/api/breeds/image/random')
+  
+  if (error) {
+    // handle the error
+  }
+  else {
+    // use the dog image
+  }
+}
 ```
