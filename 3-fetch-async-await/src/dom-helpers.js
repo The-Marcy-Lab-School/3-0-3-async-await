@@ -1,4 +1,6 @@
 export const renderUsers = (userData) => {
+  if (!userData) return;
+
   const usersList = document.querySelector("#users-list");
   // clear out the innerHTML
   usersList.innerHTML = "";
